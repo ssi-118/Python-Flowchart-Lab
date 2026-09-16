@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { RotateCcw, Info, X } from 'lucide-react';
+import { RotateCcw, Info, X, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 
 export default function FlowchartCanvas({
   nodes,
@@ -14,7 +14,42 @@ export default function FlowchartCanvas({
   const svgRef = useRef(null);
   const [draggingNodeId, setDraggingNodeId] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [view, setView] = useState({ zoom: 1, panX: 0, panY: 0 });
+  const [panStart, setPanStart] = useState({ x: 0, y: 0, panX: 0, panY: 0 });
   const [showLegend, setShowLegend] = useState(false);
+  const didPanRef = useRef(false);
+
+  const getSvgPoint = (e) => {
+    const svgRect = svgRef.current.getBoundingClientRect();
+    return {
+      x: ((e.clientX - svgRect.left) / svgRect.width) * 900,
+      y: ((e.clientY - svgRect.top) / svgRect.height) * 720
+    };
+  };
+
+  const fitToScreen = () => {
+    if (!nodes.length || !svgRef.current) return;
+    const bounds = nodes.reduce((result, node) => ({
+      minX: Math.min(result.minX, node.x),
+      minY: Math.min(result.minY, node.y),
+      maxX: Math.max(result.maxX, node.x + 160),
+      maxY: Math.max(result.maxY, node.y + 70)
+    }), { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
+    const padding = 45;
+    const contentWidth = bounds.maxX - bounds.minX + padding * 2;
+    const contentHeight = bounds.maxY - bounds.minY + padding * 2;
+    const zoom = Math.min(900 / contentWidth, 720 / contentHeight, 1.5);
+    setView({
+      zoom: Math.max(0.45, zoom),
+      panX: (900 - contentWidth * zoom) / 2 - (bounds.minX - padding) * zoom,
+      panY: (720 - contentHeight * zoom) / 2 - (bounds.minY - padding) * zoom
+    });
+  };
+
+  const adjustZoom = (amount) => {
+    setView(current => ({ ...current, zoom: Math.max(0.45, Math.min(2.2, current.zoom + amount)) }));
+  };
 
   // Handle Mouse Dragging
   const handleMouseDown = (e, node) => {
@@ -22,23 +57,53 @@ export default function FlowchartCanvas({
     onSelectNode(node.id);
     setDraggingNodeId(node.id);
 
-    const svgRect = svgRef.current.getBoundingClientRect();
+    const point = getSvgPoint(e);
     setDragOffset({
-      x: e.clientX - svgRect.left - node.x,
-      y: e.clientY - svgRect.top - node.y
+      x: (point.x - view.panX) / view.zoom - node.x,
+      y: (point.y - view.panY) / view.zoom - node.y
     });
   };
 
   const handleMouseMove = (e) => {
-    if (!draggingNodeId || !svgRef.current) return;
-    const svgRect = svgRef.current.getBoundingClientRect();
-    const newX = Math.max(20, Math.min(850, e.clientX - svgRect.left - dragOffset.x));
-    const newY = Math.max(20, Math.min(750, e.clientY - svgRect.top - dragOffset.y));
-    onUpdateNodePosition(draggingNodeId, newX, newY);
+    if (!svgRef.current) return;
+    if (draggingNodeId) {
+      const point = getSvgPoint(e);
+      const newX = Math.max(20, Math.min(850, (point.x - view.panX) / view.zoom - dragOffset.x));
+      const newY = Math.max(20, Math.min(750, (point.y - view.panY) / view.zoom - dragOffset.y));
+      onUpdateNodePosition(draggingNodeId, newX, newY);
+    } else if (isPanning) {
+      didPanRef.current = true;
+      const svgRect = svgRef.current.getBoundingClientRect();
+      setView(current => ({
+        ...current,
+        panX: panStart.panX + ((e.clientX - panStart.x) / svgRect.width) * 900,
+        panY: panStart.panY + ((e.clientY - panStart.y) / svgRect.height) * 720
+      }));
+    }
   };
 
   const handleMouseUp = () => {
     setDraggingNodeId(null);
+    setIsPanning(false);
+  };
+
+  const handleCanvasMouseDown = (e) => {
+    if (e.button !== 0) return;
+    setIsPanning(true);
+    setPanStart({ x: e.clientX, y: e.clientY, panX: view.panX, panY: view.panY });
+  };
+
+  const handleCanvasClick = () => {
+    if (didPanRef.current) {
+      didPanRef.current = false;
+      return;
+    }
+    onSelectNode(null);
+  };
+
+  const handleWheel = (e) => {
+    e.preventDefault();
+    adjustZoom(e.deltaY < 0 ? 0.1 : -0.1);
   };
 
   const handleNodeClick = (e, node) => {
@@ -311,17 +376,32 @@ export default function FlowchartCanvas({
       </div>
 
       {/* SVG Canvas Workspace */}
-      <div className="flex-1 min-h-[580px] w-full bg-slate-50/70 dark:bg-slate-950/60 rounded-xl border border-slate-200 dark:border-slate-800 relative overflow-auto">
+      <div className="flex-1 min-h-[580px] w-full bg-slate-50/70 dark:bg-slate-950/60 rounded-xl border border-slate-200 dark:border-slate-800 relative overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+
+        <div className="absolute right-3 top-3 z-10 flex flex-col gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 p-1 shadow-md backdrop-blur-sm">
+          <button onClick={() => adjustZoom(0.1)} className="p-2 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600 rounded-lg cursor-pointer" title="Zoom in" aria-label="Zoom in">
+            <ZoomIn className="w-4 h-4" />
+          </button>
+          <button onClick={() => adjustZoom(-0.1)} className="p-2 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600 rounded-lg cursor-pointer" title="Zoom out" aria-label="Zoom out">
+            <ZoomOut className="w-4 h-4" />
+          </button>
+          <button onClick={fitToScreen} className="p-2 text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800 hover:text-indigo-600 rounded-lg cursor-pointer" title="Fit flowchart to canvas" aria-label="Fit flowchart to canvas">
+            <Maximize2 className="w-4 h-4" />
+          </button>
+        </div>
 
         <svg
           ref={svgRef}
-          width="100%"
-          height="720"
-          className="w-full h-full min-w-[700px] min-h-[700px] block"
+          viewBox="0 0 900 720"
+          preserveAspectRatio="none"
+          className={`w-full h-full min-h-[580px] block ${isPanning ? 'cursor-grabbing' : 'cursor-grab'}`}
+          onMouseDown={handleCanvasMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
-          onClick={() => onSelectNode(null)}
+          onMouseLeave={handleMouseUp}
+          onWheel={handleWheel}
+          onClick={handleCanvasClick}
         >
           <defs>
             <marker
@@ -336,11 +416,13 @@ export default function FlowchartCanvas({
             </marker>
           </defs>
 
-          {/* Render Connections */}
-          {connections.map(renderConnection)}
+          <g transform={`translate(${view.panX} ${view.panY}) scale(${view.zoom})`}>
+            {/* Render Connections */}
+            {connections.map(renderConnection)}
 
-          {/* Render Nodes */}
-          {nodes.map(renderNodeShape)}
+            {/* Render Nodes */}
+            {nodes.map(renderNodeShape)}
+          </g>
         </svg>
 
         {/* Floating Legend Popover / Tooltip */}
@@ -352,7 +434,7 @@ export default function FlowchartCanvas({
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-2 text-slate-700 dark:text-slate-300">
+            <div className="flex items-center gap-3 whitespace-nowrap text-slate-700 dark:text-slate-300">
               <span className="flex items-center gap-1.5 font-medium">
                 <span className="w-3.5 h-3.5 rounded-full bg-emerald-200 border border-emerald-600 inline-block" /> Oval: Start / End
               </span>

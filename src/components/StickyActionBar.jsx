@@ -27,7 +27,7 @@ export default function StickyActionBar({
             className="flex-1 sm:flex-initial py-2 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Play className="w-4 h-4 fill-current" />
-            <span>▶ Run Simulation</span>
+            <span>Run Simulation</span>
           </button>
 
           <button

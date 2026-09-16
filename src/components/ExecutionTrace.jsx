@@ -18,7 +18,7 @@ export default function ExecutionTrace({ trace = [], currentStepIndex = -1, fina
       <div className="flex-1 overflow-y-auto space-y-2 max-h-[220px] pr-1">
         {trace.length === 0 ? (
           <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500 italic">
-            Click "▶ Run Simulation" to see step-by-step trace output.
+            Click "Run Simulation" to see step-by-step trace output.
           </div>
         ) : (
           trace.map((item, idx) => {

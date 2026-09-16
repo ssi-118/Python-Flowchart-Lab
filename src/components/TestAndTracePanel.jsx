@@ -20,18 +20,6 @@ export default function TestAndTracePanel({
 }) {
   const currentStepItem = trace[stepIndex] || null;
 
-  // Preset button options for quick test input loading
-  const handleApplyPreset = (presetType) => {
-    if (problem.id === 'largest_three') {
-      if (presetType === 'normal') onChangeInput('all', { A: 25, B: 12, C: 18 });
-      else if (presetType === 'equal') onChangeInput('all', { A: 15, B: 15, C: 15 });
-      else if (presetType === 'negative') onChangeInput('all', { A: -10, B: -5, C: -2 });
-    } else {
-      const cases = problem.generateTestCases();
-      if (cases.length > 0) onChangeInput('all', cases[0].inputs);
-    }
-  };
-
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors space-y-4">
       
@@ -70,28 +58,6 @@ export default function TestAndTracePanel({
           ))}
         </div>
 
-        {/* Quick Presets */}
-        <div className="flex items-center gap-1.5 pt-1">
-          <span className="text-[10px] font-bold text-slate-400">Presets:</span>
-          <button
-            onClick={() => handleApplyPreset('normal')}
-            className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
-          >
-            Normal
-          </button>
-          <button
-            onClick={() => handleApplyPreset('equal')}
-            className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
-          >
-            Equal
-          </button>
-          <button
-            onClick={() => handleApplyPreset('negative')}
-            className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
-          >
-            Negative
-          </button>
-        </div>
       </div>
 
       {/* Buttons Hierarchy */}
@@ -102,17 +68,18 @@ export default function TestAndTracePanel({
           className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-extrabold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <Play className="w-4 h-4 fill-white" />
-          <span>▶ Run Simulation</span>
+          <span>Run Simulation</span>
         </button>
 
         {/* Secondary Buttons */}
         <div className="flex items-center gap-2">
           <button
             onClick={onNextStep}
-            className="flex-1 py-1.5 px-3 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 text-white font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-1 cursor-pointer"
+            disabled={totalSteps > 0 && stepIndex >= totalSteps - 1}
+            className="flex-1 py-1.5 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-200 dark:border-slate-700 transition-colors flex items-center justify-center gap-1 cursor-pointer"
           >
             <SkipForward className="w-3.5 h-3.5" />
-            <span>Next Step ({stepIndex + 1}/{totalSteps || '—'})</span>
+            <span>{totalSteps > 0 && stepIndex >= totalSteps - 1 ? 'Complete' : `Next Step (${stepIndex + 1}/${totalSteps || '—'})`}</span>
           </button>
 
           <button

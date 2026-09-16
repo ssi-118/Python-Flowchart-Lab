@@ -1,4 +1,4 @@
-// Unit 1: Computational Thinking & Programming Basics Problems Data
+// Computational Thinking & Programming Basics Problems Data
 
 export const PROBLEMS = [
   {

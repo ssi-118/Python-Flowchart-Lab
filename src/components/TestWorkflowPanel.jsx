@@ -120,7 +120,7 @@ export default function TestWorkflowPanel({
                   className="py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                 >
                   <Play className="w-4 h-4 fill-white" />
-                  <span>▶ Run Simulation</span>
+                  <span>Run Simulation</span>
                 </button>
 
                 <button

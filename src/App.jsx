@@ -35,6 +35,7 @@ export default function App() {
   const [activeNodeId, setActiveNodeId] = useState(null);
   const [visitedNodeIds, setVisitedNodeIds] = useState([]);
   const [finalResult, setFinalResult] = useState(undefined);
+  const [simulationOutput, setSimulationOutput] = useState(undefined);
   const [isRunning, setIsRunning] = useState(false);
   const [speed, setSpeed] = useState(700);
 
@@ -87,6 +88,7 @@ export default function App() {
     setActiveNodeId(null);
     setVisitedNodeIds([]);
     setFinalResult(undefined);
+    setSimulationOutput(undefined);
   };
 
   // Run Verification Engine on Demand
@@ -177,6 +179,7 @@ export default function App() {
 
     setTrace(evalResult.trace);
     setFinalResult(evalResult.finalOutput);
+    setSimulationOutput(evalResult.finalOutput);
     setCurrentStep('test');
 
     if (evalResult.trace.length === 0) return;
@@ -203,14 +206,26 @@ export default function App() {
   }, [isRunning, currentStepIndex, trace, speed]);
 
   const handleNextStep = () => {
+    setIsRunning(false);
     if (trace.length === 0) {
-      handleRunSimulation();
+      const evalResult = evaluateFlowchart(nodes, connections, inputValues, currentProblem);
+      setTrace(evalResult.trace);
+      setSimulationOutput(evalResult.finalOutput);
+      setFinalResult(undefined);
+      setCurrentStep('test');
+      setCurrentStepIndex(0);
+      setActiveNodeId(evalResult.trace[0]?.nodeId || null);
+      setVisitedNodeIds(evalResult.trace[0] ? [evalResult.trace[0].nodeId] : []);
       return;
     }
     if (currentStepIndex < trace.length - 1) {
       const nextIdx = currentStepIndex + 1;
       setCurrentStepIndex(nextIdx);
       setActiveNodeId(trace[nextIdx].nodeId);
+      setVisitedNodeIds(trace.slice(0, nextIdx + 1).map(item => item.nodeId));
+      if (nextIdx === trace.length - 1) {
+        setFinalResult(simulationOutput);
+      }
     }
   };
 
@@ -222,6 +237,7 @@ export default function App() {
       const evalResult = evaluateFlowchart(nodes, connections, testCase.inputs, currentProblem);
       setTrace(evalResult.trace);
       setFinalResult(evalResult.finalOutput);
+      setSimulationOutput(evalResult.finalOutput);
       setIsRunning(true);
       setCurrentStepIndex(0);
       setActiveNodeId(evalResult.trace[0]?.nodeId || null);
@@ -343,7 +359,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="bg-white/80 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800 py-3.5 px-6 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
-        Python Flowchart Lab • Unit 1: Computational Thinking & Programming Basics • 100% Local Browser Engine
+        Python Flowchart Lab • Computational Thinking & Programming Basics • 100% Local Browser Engine
       </footer>
 
       {/* Spotlight Problem Finder Modal */}

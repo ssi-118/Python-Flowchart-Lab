@@ -19,6 +19,7 @@ export default function ProblemAndBuildPanel({
 
   // Tab State: 'build' | 'edit' | 'connect' | 'pseudocode'
   const [activeTab, setActiveTab] = useState('build');
+  const [codeTab, setCodeTab] = useState('algorithm');
   const [copied, setCopied] = useState(false);
 
   // Auto-switch to 'edit' when node is selected
@@ -63,7 +64,7 @@ export default function ProblemAndBuildPanel({
   };
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(problem.pseudocode);
+    navigator.clipboard.writeText(codeTab === 'algorithm' ? problem.algorithm.join('\n') : problem.pseudocode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -74,14 +75,14 @@ export default function ProblemAndBuildPanel({
       {/* 1. COMPACT PROBLEM CARD */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
         <div className="flex items-center justify-between text-[11px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-1">
-          <span>UNIT 1 · PROBLEM {PROBLEMS.findIndex(p => p.id === selectedProblemId) + 1}</span>
+          <span>PROBLEM {PROBLEMS.findIndex(p => p.id === selectedProblemId) + 1}</span>
         </div>
 
         <div className="relative mb-2">
           <select
             value={selectedProblemId}
             onChange={(e) => onSelectProblem(e.target.value)}
-            aria-label="Select Unit 1 Problem Challenge"
+            aria-label="Select problem challenge"
             className="w-full px-3 py-2 text-xs font-extrabold rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white outline-none cursor-pointer appearance-none shadow-sm focus:ring-2 focus:ring-indigo-500"
           >
             {PROBLEMS.map((prob) => (
@@ -365,7 +366,7 @@ export default function ProblemAndBuildPanel({
             <div className="space-y-2 animate-in fade-in duration-150">
               <div className="flex items-center justify-between">
                 <h2 className="text-xs font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                  PSEUDOCODE
+                  CODE
                 </h2>
                 <button
                   onClick={handleCopyCode}
@@ -376,9 +377,30 @@ export default function ProblemAndBuildPanel({
                 </button>
               </div>
 
-              <pre className="font-mono text-xs text-indigo-900 dark:text-indigo-200 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 whitespace-pre-wrap leading-relaxed max-h-[220px] overflow-y-auto">
-                {problem.pseudocode}
-              </pre>
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-fit">
+                <button
+                  onClick={() => setCodeTab('algorithm')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${codeTab === 'algorithm' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                >
+                  Algorithm
+                </button>
+                <button
+                  onClick={() => setCodeTab('pseudocode')}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${codeTab === 'pseudocode' ? 'bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}
+                >
+                  Pseudocode
+                </button>
+              </div>
+
+              {codeTab === 'algorithm' ? (
+                <div className="font-sans text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 space-y-1 max-h-[220px] overflow-y-auto">
+                  {problem.algorithm.map((step, index) => <div key={index}>{step}</div>)}
+                </div>
+              ) : (
+                <pre className="font-mono text-xs text-indigo-900 dark:text-indigo-200 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800 whitespace-pre-wrap leading-relaxed max-h-[220px] overflow-y-auto">
+                  {problem.pseudocode}
+                </pre>
+              )}
             </div>
           )}
 

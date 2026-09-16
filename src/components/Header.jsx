@@ -1,5 +1,5 @@
 import React from 'react';
-import { Network, Sun, Moon, Check, BookOpen } from 'lucide-react';
+import { Network, Sun, Moon, Check } from 'lucide-react';
 
 export default function Header({ isDarkMode, setIsDarkMode, currentStep }) {
   // Stepper definition: 1. Build -> 2. Test -> 3. Verify -> 4. Results
@@ -31,11 +31,11 @@ export default function Header({ isDarkMode, setIsDarkMode, currentStep }) {
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 transition-colors">
       
       {/* Top Header Bar */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/80">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-1.5 flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/80">
         
         {/* Logo & App Title */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm">
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-sm">
             <Network className="w-5 h-5" />
           </div>
           <div>
@@ -43,10 +43,6 @@ export default function Header({ isDarkMode, setIsDarkMode, currentStep }) {
               <h1 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white font-sans">
                 Python Flowchart Lab
               </h1>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                <BookOpen className="w-3 h-3" />
-                Unit 1
-              </span>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
               Computational Thinking & Algorithm Logic Simulator
@@ -75,7 +71,7 @@ export default function Header({ isDarkMode, setIsDarkMode, currentStep }) {
       </div>
 
       {/* Progress Stepper Bar */}
-      <div className="bg-slate-50 dark:bg-slate-950 px-4 sm:px-6 py-2 border-b border-slate-200/80 dark:border-slate-800/80">
+      <div className="bg-slate-50 dark:bg-slate-950 px-4 sm:px-6 py-1.5 border-b border-slate-200/80 dark:border-slate-800/80">
         <div className="max-w-[1600px] mx-auto flex items-center justify-center gap-2 sm:gap-6 text-xs font-bold">
           {steps.map((step, idx) => {
             const status = getStepStatus(step.id);

@@ -151,7 +151,7 @@ export function generateIntelligentAnalysis(structRes, logicRes, problem) {
     return {
       type: 'SUCCESS',
       headline: 'Flowchart Fully Verified!',
-      summary: `The flowchart contains all required Start, Input, Decision, Output, and End nodes. All ${logicRes.totalCount}/${logicRes.totalCount} generated test cases produced expected results! The algorithm logic matches the Unit 1 requirement for "${problem.title}".`
+      summary: `The flowchart contains all required Start, Input, Decision, Output, and End nodes. All ${logicRes.totalCount}/${logicRes.totalCount} generated test cases produced expected results! The algorithm logic matches the requirement for "${problem.title}".`
     };
   }
 

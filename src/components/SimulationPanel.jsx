@@ -74,7 +74,7 @@ export default function SimulationPanel({
           className="flex-1 min-w-[130px] py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20"
         >
           <Play className="w-4 h-4 fill-white" />
-          <span>▶ Run Simulation</span>
+          <span>Run Simulation</span>
         </button>
 
         <button

@@ -1,6 +1,6 @@
 import React from 'react';
 import { PROBLEMS } from '../data/problemsData';
-import { ChevronDown, BookOpen } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 export default function ProblemSelector({ selectedProblemId, onSelectProblem }) {
   const selectedProblem = PROBLEMS.find(p => p.id === selectedProblemId) || PROBLEMS[0];
@@ -12,7 +12,7 @@ export default function ProblemSelector({ selectedProblemId, onSelectProblem }) 
         {/* Title & Dropdown Label */}
         <div className="flex-1">
           <label className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block mb-1">
-            Unit 1 Problem Challenge
+            Problem Challenge
           </label>
           <div className="relative">
             <select
