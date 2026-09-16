@@ -4,12 +4,10 @@ import { evaluateFlowchart } from './utils/flowchartEvaluator';
 import { verifyStructure, verifyLogic, generateIntelligentAnalysis } from './utils/verifier';
 
 import Header from './components/Header';
-import ProblemSelector from './components/ProblemSelector';
+import ProblemAndBuildPanel from './components/ProblemAndBuildPanel';
 import FlowchartCanvas from './components/FlowchartCanvas';
-import NodeToolbox from './components/NodeToolbox';
-import TestWorkflowPanel from './components/TestWorkflowPanel';
-import VerificationPanel from './components/VerificationPanel';
-import StickyActionBar from './components/StickyActionBar';
+import TestAndTracePanel from './components/TestAndTracePanel';
+import VerificationSection from './components/VerificationSection';
 import ProblemFinderModal from './components/ProblemFinderModal';
 
 export default function App() {
@@ -17,7 +15,7 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Stepper state: 'build' | 'test' | 'verify' | 'results'
-  const [activeStep, setActiveStep] = useState('build');
+  const [currentStep, setCurrentStep] = useState('build');
 
   // Problem State
   const [selectedProblemId, setSelectedProblemId] = useState('largest_three');
@@ -42,6 +40,7 @@ export default function App() {
 
   // Verification & Analysis State
   const [hasVerified, setHasVerified] = useState(false);
+  const [isOutdated, setIsOutdated] = useState(false);
   const [structResult, setStructResult] = useState(null);
   const [logicResult, setLogicResult] = useState(null);
   const [analysisData, setAnalysisData] = useState(null);
@@ -70,6 +69,8 @@ export default function App() {
     setInputValues(newProb.defaultValues);
     setSelectedNodeId(null);
     setHasVerified(false);
+    setIsOutdated(false);
+    setCurrentStep('build');
     resetSimulationState();
 
     const sRes = verifyStructure(newProb.starterNodes, newProb.starterConnections);
@@ -98,27 +99,21 @@ export default function App() {
     setLogicResult(lRes);
     setAnalysisData(aData);
     setHasVerified(true);
-    setActiveStep('verify');
+    setIsOutdated(false);
+    setCurrentStep(sRes.isStructureValid && lRes.isLogicValid ? 'results' : 'verify');
 
     // Scroll to verify section
     const elem = document.querySelector('#sec-verify');
     if (elem) elem.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Auto re-evaluate test cases when flowchart graph mutates
-  useEffect(() => {
-    const sRes = verifyStructure(nodes, connections);
-    const lRes = verifyLogic(nodes, connections, currentProblem);
-    setStructResult(sRes);
-    setLogicResult(lRes);
-
+  // Graph Mutation Handlers (Invalidates verification state when modified!)
+  const invalidateVerification = () => {
     if (hasVerified) {
-      const aData = generateIntelligentAnalysis(sRes, lRes, currentProblem);
-      setAnalysisData(aData);
+      setIsOutdated(true);
     }
-  }, [nodes, connections, currentProblem]);
+  };
 
-  // Node Manipulation Handlers
   const handleAddNode = (newNodeData) => {
     const id = `node-${Date.now()}`;
     const newNode = {
@@ -129,10 +124,12 @@ export default function App() {
     };
     setNodes([...nodes, newNode]);
     setSelectedNodeId(id);
+    invalidateVerification();
   };
 
   const handleUpdateNode = (id, fields) => {
     setNodes(nodes.map(n => (n.id === id ? { ...n, ...fields } : n)));
+    invalidateVerification();
   };
 
   const handleUpdateNodePosition = (id, x, y) => {
@@ -143,16 +140,18 @@ export default function App() {
     setNodes(nodes.filter(n => n.id !== id));
     setConnections(connections.filter(c => c.source !== id && c.target !== id));
     if (selectedNodeId === id) setSelectedNodeId(null);
+    invalidateVerification();
   };
 
-  // Connection Handlers
   const handleAddConnection = (connData) => {
     const id = `c-${Date.now()}`;
     setConnections([...connections, { id, ...connData }]);
+    invalidateVerification();
   };
 
   const handleDeleteConnection = (id) => {
     setConnections(connections.filter(c => c.id !== id));
+    invalidateVerification();
   };
 
   // Reset to starter default flowchart
@@ -161,6 +160,8 @@ export default function App() {
     setConnections(currentProblem.starterConnections);
     setSelectedNodeId(null);
     setHasVerified(false);
+    setIsOutdated(false);
+    setCurrentStep('build');
     resetSimulationState();
 
     const sRes = verifyStructure(currentProblem.starterNodes, currentProblem.starterConnections);
@@ -176,7 +177,7 @@ export default function App() {
 
     setTrace(evalResult.trace);
     setFinalResult(evalResult.finalOutput);
-    setActiveStep('test');
+    setCurrentStep('test');
 
     if (evalResult.trace.length === 0) return;
 
@@ -225,8 +226,17 @@ export default function App() {
       setCurrentStepIndex(0);
       setActiveNodeId(evalResult.trace[0]?.nodeId || null);
       setVisitedNodeIds(evalResult.visitedNodeIds);
-      setActiveStep('test');
+      setCurrentStep('test');
     }, 50);
+  };
+
+  // Change input value helper (single key or 'all')
+  const handleChangeInputValue = (key, val) => {
+    if (key === 'all') {
+      setInputValues({ ...val });
+    } else {
+      setInputValues({ ...inputValues, [key]: val });
+    }
   };
 
   // "🔎 Find a Problem" Feature
@@ -248,31 +258,24 @@ export default function App() {
   const hasFailingTest = logicResult && logicResult.passCount < logicResult.totalCount;
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 pb-20">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
       
-      {/* Top Header with Sticky Stepper */}
+      {/* Top Header with Progress Stepper */}
       <Header
         isDarkMode={isDarkMode}
         setIsDarkMode={setIsDarkMode}
-        activeStep={activeStep}
-        setActiveStep={setActiveStep}
+        currentStep={currentStep}
       />
 
-      {/* Main Workspace Body */}
-      <main className="max-w-7xl w-full mx-auto p-4 sm:p-6 flex-1 flex flex-col gap-6">
-        
-        {/* Problem Selector Dropdown */}
-        <ProblemSelector
-          selectedProblemId={selectedProblemId}
-          onSelectProblem={handleSelectProblem}
-        />
-
-        {/* STEP 1: BUILD — Flowchart Canvas & Merged Left Panel */}
-        <section id="sec-build" className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* Main 3-Column Desktop Workspace (Problem/Build | Canvas | Test/Verify) */}
+      <main id="sec-workspace" className="max-w-[1700px] w-full mx-auto p-4 sm:p-6 flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           
-          {/* LEFT PANEL: 3 Tabs (Build Shape / Connect / Pseudocode) */}
-          <div className="lg:col-span-4">
-            <NodeToolbox
+          {/* COLUMN 1: LEFT SIDEBAR — Problem Selector & Build Tools (~23% width / 3 cols) */}
+          <div className="lg:col-span-3 space-y-5">
+            <ProblemAndBuildPanel
+              selectedProblemId={selectedProblemId}
+              onSelectProblem={handleSelectProblem}
               nodes={nodes}
               connections={connections}
               selectedNodeId={selectedNodeId}
@@ -285,8 +288,8 @@ export default function App() {
             />
           </div>
 
-          {/* RIGHT SIDE: Dominant Visual Flowchart Canvas */}
-          <div className="lg:col-span-8">
+          {/* COLUMN 2: CENTER — Dominant Flowchart Canvas (~54% width / 6.5 cols) */}
+          <div className="lg:col-span-6 space-y-5">
             <FlowchartCanvas
               nodes={nodes}
               connections={connections}
@@ -299,61 +302,47 @@ export default function App() {
             />
           </div>
 
-        </section>
+          {/* COLUMN 3: RIGHT SIDEBAR — Test, Trace & Verification (~23% width / 2.5 cols) */}
+          <div className="lg:col-span-3 space-y-5">
+            <section id="sec-test">
+              <TestAndTracePanel
+                problem={currentProblem}
+                inputValues={inputValues}
+                onChangeInput={handleChangeInputValue}
+                onRunSimulation={handleRunSimulation}
+                onNextStep={handleNextStep}
+                onResetSimulation={resetSimulationState}
+                isRunning={isRunning}
+                stepIndex={currentStepIndex}
+                totalSteps={trace.length}
+                speed={speed}
+                setSpeed={setSpeed}
+                trace={trace}
+                finalResult={finalResult}
+                testResults={logicResult?.testResults || []}
+                onLoadTestCase={handleLoadTestCase}
+              />
+            </section>
 
-        {/* STEP 2: TEST — Merged Test Workflow Panel (Simulate / Trace / Test Cases) */}
-        <section id="sec-test">
-          <TestWorkflowPanel
-            problem={currentProblem}
-            inputValues={inputValues}
-            onChangeInput={(key, val) => setInputValues({ ...inputValues, [key]: val })}
-            onRunSimulation={handleRunSimulation}
-            onNextStep={handleNextStep}
-            onResetSimulation={resetSimulationState}
-            isRunning={isRunning}
-            stepIndex={currentStepIndex}
-            totalSteps={trace.length}
-            speed={speed}
-            setSpeed={setSpeed}
-            trace={trace}
-            finalResult={finalResult}
-            testResults={logicResult?.testResults || []}
-            onGenerateTestCases={handleCheckFlowchart}
-            onLoadTestCase={handleLoadTestCase}
-            passCount={logicResult?.passCount || 0}
-            totalCount={logicResult?.totalCount || 0}
-          />
-        </section>
+            <section id="sec-verify">
+              <VerificationSection
+                structResult={structResult}
+                logicResult={logicResult}
+                analysisData={analysisData}
+                onRunVerification={handleCheckFlowchart}
+                hasVerified={hasVerified}
+                isOutdated={isOutdated}
+                onFindProblem={handleFindProblem}
+                hasFailingTest={hasFailingTest}
+              />
+            </section>
+          </div>
 
-        {/* STEP 3 & 4: VERIFY & RESULTS — Unified Collapsible Verification & Analysis Card */}
-        <section id="sec-verify">
-          <VerificationPanel
-            structResult={structResult}
-            logicResult={logicResult}
-            analysisData={analysisData}
-            onRunVerification={handleCheckFlowchart}
-            hasVerified={hasVerified}
-            onFindProblem={handleFindProblem}
-            hasFailingTest={hasFailingTest}
-          />
-        </section>
-
+        </div>
       </main>
 
-      {/* Sticky Quick Action Bar */}
-      <StickyActionBar
-        onRunSimulation={handleRunSimulation}
-        onNextStep={handleNextStep}
-        onCheckFlowchart={handleCheckFlowchart}
-        onRunTestSuite={handleCheckFlowchart}
-        onReset={resetSimulationState}
-        isRunning={isRunning}
-        stepIndex={currentStepIndex}
-        totalSteps={trace.length}
-      />
-
       {/* Footer */}
-      <footer className="bg-white/80 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800 py-4 px-6 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
+      <footer className="bg-white/80 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800 py-3.5 px-6 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
         Python Flowchart Lab • Unit 1: Computational Thinking & Programming Basics • 100% Local Browser Engine
       </footer>
 

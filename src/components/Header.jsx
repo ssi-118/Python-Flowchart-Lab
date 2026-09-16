@@ -1,50 +1,63 @@
 import React from 'react';
-import { Network, Sun, Moon, BookOpen, Hammer, PlayCircle, ShieldCheck, Award } from 'lucide-react';
+import { Network, Sun, Moon, Check, BookOpen } from 'lucide-react';
 
-export default function Header({ isDarkMode, setIsDarkMode, activeStep, setActiveStep }) {
+export default function Header({ isDarkMode, setIsDarkMode, currentStep }) {
+  // Stepper definition: 1. Build -> 2. Test -> 3. Verify -> 4. Results
   const steps = [
-    { id: 'build', label: '1. Build', icon: Hammer, anchor: '#sec-build' },
-    { id: 'test', label: '2. Test', icon: PlayCircle, anchor: '#sec-test' },
-    { id: 'verify', label: '3. Verify', icon: ShieldCheck, anchor: '#sec-verify' },
-    { id: 'results', label: '4. Results', icon: Award, anchor: '#sec-results' }
+    { id: 'build', label: 'Build', anchor: '#sec-workspace' },
+    { id: 'test', label: 'Test', anchor: '#sec-test' },
+    { id: 'verify', label: 'Verify', anchor: '#sec-verify' },
+    { id: 'results', label: 'Results', anchor: '#sec-verify' }
   ];
 
-  const handleStepClick = (step) => {
-    setActiveStep(step.id);
-    const elem = document.querySelector(step.anchor);
+  const getStepStatus = (stepId) => {
+    const order = ['build', 'test', 'verify', 'results'];
+    const currIdx = order.indexOf(currentStep);
+    const stepIdx = order.indexOf(stepId);
+
+    if (stepIdx < currIdx) return 'completed';
+    if (stepIdx === currIdx) return 'current';
+    return 'future';
+  };
+
+  const handleStepClick = (anchor) => {
+    const elem = document.querySelector(anchor);
     if (elem) {
       elem.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   return (
-    <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 transition-colors">
+    <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 transition-colors">
       
-      {/* Top Title & Theme Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/60">
+      {/* Top Header Bar */}
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800/80">
+        
+        {/* Logo & App Title */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-sm">
+          <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm">
             <Network className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white font-sans">
+              <h1 className="text-base font-extrabold tracking-tight text-slate-900 dark:text-white font-sans">
                 Python Flowchart Lab
               </h1>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/80">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                 <BookOpen className="w-3 h-3" />
                 Unit 1
               </span>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
-              Computational Thinking & Programming Basics
+              Computational Thinking & Algorithm Logic Simulator
             </p>
           </div>
         </div>
 
-        {/* Theme Toggle */}
+        {/* Dark / Light Theme Toggle */}
         <button
           onClick={() => setIsDarkMode(!isDarkMode)}
+          aria-label={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 text-xs font-bold cursor-pointer"
         >
           {isDarkMode ? (
@@ -61,26 +74,35 @@ export default function Header({ isDarkMode, setIsDarkMode, activeStep, setActiv
         </button>
       </div>
 
-      {/* Sticky Progress Stepper Bar */}
-      <div className="bg-slate-50/90 dark:bg-slate-950/80 px-4 sm:px-6 py-2 border-b border-slate-200/80 dark:border-slate-800/80">
-        <div className="max-w-7xl mx-auto flex items-center justify-between sm:justify-center gap-2 sm:gap-6">
-          {steps.map((step) => {
-            const Icon = step.icon;
-            const isActive = activeStep === step.id;
+      {/* Progress Stepper Bar */}
+      <div className="bg-slate-50 dark:bg-slate-950 px-4 sm:px-6 py-2 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-center gap-2 sm:gap-6 text-xs font-bold">
+          {steps.map((step, idx) => {
+            const status = getStepStatus(step.id);
 
             return (
-              <button
-                key={step.id}
-                onClick={() => handleStepClick(step)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 scale-[1.02]'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{step.label}</span>
-              </button>
+              <React.Fragment key={step.id}>
+                {idx > 0 && <span className="text-slate-300 dark:text-slate-700 font-normal">→</span>}
+                <button
+                  onClick={() => handleStepClick(step.anchor)}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-xl transition-all cursor-pointer ${
+                    status === 'completed'
+                      ? 'text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800'
+                      : status === 'current'
+                      ? 'bg-indigo-600 text-white font-extrabold shadow-sm'
+                      : 'text-slate-400 dark:text-slate-600 font-medium'
+                  }`}
+                >
+                  {status === 'completed' ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[3]" />
+                  ) : status === 'current' ? (
+                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                  ) : (
+                    <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-700" />
+                  )}
+                  <span>{step.label}</span>
+                </button>
+              </React.Fragment>
             );
           })}
         </div>
